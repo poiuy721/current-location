@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Insert title here</title>
+<script src="http://code.jquery.com/jquery-1.11.0.js"></script>
+<style>
+    body {
+        padding: 0;
+        margin: 0;
+    }
+    html, body, #map {
+        height: 100%;
+        width: 100vw;
+    }
+</style>
+</head>
+<body>
+    <div id="map"></div>
+    <ul>
+        <li>위도:<span id="latitude"></span></li>
+        <li>경도:<span id="longitude"></span></li>
+        <li>메모:<input id="memo" type="text"></li>
+    </ul>
+    <input id="btnSave" type="button" value="저장" />
+    <script>
+	    var map = L.map('map').fitWorld();
+
+        L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+                'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            id: 'mapbox/streets-v11',
+            tileSize: 512,
+            zoomOffset: -1
+        }).addTo(map);
+
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+
+            L.marker(e.latlng).addTo(map)
+                .bindPopup("You are within " + radius + " meters from this point").openPopup();
+
+            L.circle(e.latlng, radius).addTo(map);
+        }
+
+        function onLocationError(e) {
+            alert(e.message);
+        }
+
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+
+        map.locate({setView: true, maxZoom: 16});
+
+        $(function() {        
+            // Geolocation API에 액세스할 수 있는지를 확인
+            if (navigator.geolocation) {
+                //위치 정보를 정기적으로 얻기
+                        var id = navigator.geolocation.watchPosition(
+                        function(pos) {
+                            $('#latitude').html(pos.coords.latitude);     // 위도 
+                            $('#longitude').html(pos.coords.longitude); // 경도 
+                        });
+                
+                // 버튼 클릭으로 감시를 중지
+                $('#btnSave').click(function() {
+                    
+                });
+            } else {
+                alert("이 브라우저에서는 Geolocation이 지원되지 않습니다.")
+            }
+        });
+        
+        $(document).on("click","#btnSave",function(){
+            const lat=$('#latitude').html();
+            const lon=$('#longitude').html();
+            const memo=$('#memo').val();
+            const locationData={
+                lat:lat,
+                lon:lon,
+                memo:memo
+            };
+            $.ajax({
+                url:"/createMemo",
+                type:"post",
+                data:locationData,
+                success:function(data){
+                    console.log(data);
+                }
+            })
+        })
+    </script>
+</body>
+</html>
